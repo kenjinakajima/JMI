@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src *; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+<title>main</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="components/loader.js"></script>
+<script>
+// APIのURL
+var API_URL = "http://win-side.com/arbitrage/arbitrage_smp.php?id=";
+var cur_no = 0;
+window.onload = function () {
+  monaca.getDeviceId( function(deviceId) { 
+    API_URL += deviceId;
+    //alert("API_URL="+API_URL);
+    if( monaca.isIOS ){
+      API_URL += "&caria=iPhone";
+    }
+    if( monaca.isAndroid ){
+      API_URL += "&caria=android";
+    }
+    GetQueryString();
+  });
+};
+function GetQueryString() {
+    if (1 < document.location.search.length) {
+  	// 最初の1文字 (?記号) を除いた文字列を取得する
+		var query = document.location.search.substring(1);
+ 
+		// クエリの区切り記号 (&) で文字列を配列に分割する
+		var parameters = query.split('&');
+    
+								
+		for (var i = 0; i < parameters.length; i++) {
+			// パラメータ名とパラメータ値に分割する
+			var element = parameters[i].split('=');
+ 
+			var paramName = decodeURIComponent(element[0]);
+			var paramValue = decodeURIComponent(element[1]);
+      
+			
+      if(paramName == "cur_no") {
+        cur_no = paramValue;
+      }
+		}
+    api("list", {}, showList);
+    //alert("ent1="+ent1+":ent2="+ent2);
+	}
+}
+// 一覧の生成 ---- (*2)
+function showList(res) {
+  
+  var list = res;
+  var msg = "<meta HTTP-EQUIV='refresh' CONTENT='10'; URL=syosai.html?cur_no=" + cur_no + ">";
+  msg += "<table width='98%' cellspacing='0' cellpadding='0' border=1>";
+  msg += "<tr><td width='25%' align='center' rowspan='2'>取引所</td>";
+  if(cur_no == 1) msg += "<td width='25%' align='center' colspan='2' bgcolor='#ccffcc'>ETH/BTC</td>";
+	if(cur_no == 2) msg += "<td width='25%' align='center' colspan='2' bgcolor='#ccffcc'>LTC/BTC</td>";
+	if(cur_no == 3) msg += "<td width='25%' align='center' colspan='2' bgcolor='#ccffcc'>XRP/BTC</td>";
+  if(cur_no == 1) {
+  	msg += "</tr><tr><td width='10.25%' align='center'>ASK(買い)</td>";
+	  msg += "<td width='10.25%' align='center'>BID(売り)</td></tr>";
+  }
+	if(cur_no == 2) {
+    msg += "</tr><td width='10.25%' align='center'>ASK(買い)</td>";
+	  msg += "<td width='10.25%' align='center'>BID(売り)</td></tr>";
+	}
+  if(cur_no == 3) {
+  	msg += "</tr><td width='10.25%' align='center'>ASK(買い)</td>";
+	  msg += "<td width='10.25%' align='center'>BID(売り)</td></tr>";
+  }
+  
+  var no = Array();
+  var name = Array();
+  var eth_ask = Array();
+  var eth_bid = Array();
+  var ltc_ask = Array();
+  var ltc_bid = Array();
+  var xrp_ask = Array();
+  var xrp_bid = Array();
+  var max = 0;
+  //
+  var eth_ask_flag = 0;
+  var eth_buy_flag = 0;
+  var ltc_ask_flag = 0;
+  var ltc_buy_flag = 0;
+  var xrp_ask_flag = 0;
+  var xrp_buy_flag = 0;
+  //
+  max = list.length;
+  for (var i = 0; i < list.length; i++) {
+  	var row = list[i];
+    no[i]       = row["no"];
+    name[i]     = row["name"];
+    len = name[i].lastIndexOf( "." );
+    name[i] = name[i].substr( 0, len );
+    eth_ask[i]  = row["eth_ask"];
+    eth_bid[i]  = row["eth_bid"];
+    ltc_ask[i]  = row["ltc_ask"];
+    ltc_bid[i]  = row["ltc_bid"];
+    xrp_ask[i]  = row["xrp_ask"];
+    xrp_bid[i]  = row["xrp_bid"];
+  }
+  //
+	for (var i = 0; i <max; i++) {
+    //-----------ETH(イーサリアム)
+  	if(eth_ask[i] != 0) {
+			if(eth_ask_flag == 0) eth_ask_flag = i;
+			else
+			if(eth_ask[eth_ask_flag] > eth_ask[i]) eth_ask_flag = i;
+		}
+		if(eth_bid[i] != 0) {
+  		if(eth_buy_flag == 0) eth_buy_flag = i;
+			else
+			if(eth_bid[eth_buy_flag] < eth_bid[i]) eth_buy_flag = i;
+		}
+    //-----------LTC(ライトコイ)
+    if(ltc_ask[i] != 0) {
+			if(eth_ask_flag == 0) ltc_ask_flag = i;
+			else
+			if(ltc_ask[ltc_ask_flag] > ltc_ask[i]) ltc_ask_flag = i;
+		}
+		if(ltc_bid[i] != 0) {
+  		if(ltc_buy_flag == 0) ltc_buy_flag = i;
+			else
+			if(ltc_bid[ltc_buy_flag] < ltc_bid[i]) ltc_buy_flag = i;
+		}
+    //-----------XRP(リップル)
+    if(xrp_ask[i] != 0) {
+    	if(xrp_ask_flag == 0) xrp_ask_flag = i;
+			else
+			if(xrp_ask[xrp_ask_flag] > xrp_ask[i]) xrp_ask_flag = i;
+		}
+		if(xrp_bid[i] != 0) {
+  		if(xrp_buy_flag == 0) xrp_buy_flag = i;
+			else
+			if(xrp_bid[xrp_buy_flag] < xrp_bid[i]) xrp_buy_flag = i;
+		}
+	}
+
+	for (var i = 0; i <max; i++) {
+    if(cur_no == 1 && eth_ask[i] == 0) continue;
+    if(cur_no == 2 && ltc_ask[i] == 0) continue;
+    if(cur_no == 3 && xrp_ask[i] == 0) continue;
+    msg += "<tr><td align='left'>";
+		msg += "　" + name[i];
+		msg += "</td>";
+    if(cur_no == 1) {
+		//-----------ETH
+      msg += "<td align='left'>&nbsp;";
+      if(eth_ask[i] == 0) msg += "----"; else {
+        msg += eth_ask[i];
+        if(eth_ask_flag == i)msg += "&nbsp;<font color='#cc0000'>◎</font>";
+      }
+      msg += "<td align='left'>&nbsp;";
+      if(eth_bid[i] == 0) msg += "----"; else {
+        msg += eth_bid[i];
+        if(eth_buy_flag == i)msg += "&nbsp;<font color='#cc0000'>◎</font>";
+      }
+    }
+    if(cur_no == 2) {
+      //-----------LTC
+      msg += "<td align='left'>&nbsp;";
+      if(ltc_ask[i] == 0) msg += "----"; else {
+        msg += ltc_ask[i];
+        if(ltc_ask_flag == i)msg += "&nbsp;<font color='#cc0000'>◎</font>";
+      }
+      msg += "<td align='left'>&nbsp;";
+      if(ltc_bid[i] == 0) msg += "----"; else {
+        msg += ltc_bid[i];
+        if(ltc_buy_flag == i)msg += "&nbsp;<font color='#cc0000'>◎</font>";
+      }
+    }
+    if(cur_no == 3) {
+      //-----------XRP
+      msg += "<td align='left'>&nbsp;";
+      if(xrp_ask[i] == 0) msg += "----"; else {
+        msg += xrp_ask[i];
+        if(xrp_ask_flag == i)msg += "&nbsp;<font color='#cc0000'>◎</font>";
+      }
+      msg += "<td align='left'>&nbsp;";
+      if(xrp_bid[i] == 0) msg += "----"; else {
+        msg += xrp_bid[i];
+        if(xrp_buy_flag == i)msg += "&nbsp;<font color='#cc0000'>◎</font>";
+      }
+    }
+    msg += "</tr>";
+	}
+  
+  var rieki = eth_bid[eth_buy_flag] - eth_ask[eth_ask_flag];
+	var persent = (rieki / eth_ask[eth_ask_flag]) * 100;
+  var airb_flg = 0;
+  msg += "<tr height='40'>";
+   
+  if(cur_no == 1) {
+    if(persent > 1.5) airb_flg = 1;
+   
+    if(airb_flg == 1) {
+      msg += "<td align='center'><font color='#cc0000'>arbitrage</font></td>";
+      msg += "<td align='center' colspan='2'><font color='#cc0000'>" + rieki.toFixed(6) + "<br>" + persent.toFixed(6) + "%</font></td>";
+    } else {
+      msg += "<td align='center'><font color='#0000cc'>arbitrage</font></td>";
+	    msg += "<td align='center' colspan='2'><font color='#0000cc'>" + rieki.toFixed(6) + "<br>" + persent.toFixed(6) + "%</font></td>";
+    }
+  }
+  
+	if(cur_no == 2) {
+    airb_flg = 0;
+	  rieki = ltc_bid[ltc_buy_flag] - ltc_ask[ltc_ask_flag];
+	  persent = (rieki / ltc_ask[ltc_ask_flag]) * 100;
+    if(persent > 1.5) airb_flg = 1;
+	  if(airb_flg == 1) {
+      msg += "<td align='center'><font color='#cc0000'>arbitrage</font></td>";
+      msg += "<td align='center' colspan='2'><font color='#cc0000'>" + rieki.toFixed(6) + "<br>" + persent.toFixed(6) + "%</font></td>";
+    } else {
+      msg += "<td align='center'><font color='#0000cc'>arbitrage</font></td>";
+      msg += "<td align='center' colspan='2'><font color='#0000cc'>" + rieki.toFixed(6) + "<br>" + persent.toFixed(6) + "%</font></td>";
+    }
+	}
+	
+  if(cur_no == 3) {
+    airb_flg = 0;
+  	rieki = xrp_bid[xrp_buy_flag] - xrp_ask[xrp_ask_flag];
+	  persent = (rieki / xrp_ask[xrp_ask_flag]) * 100;
+    if(persent > 1.5) airb_flg = 1;
+	  if(airb_flg == 1) {
+      msg += "<td align='center'><font color='#cc0000'>arbitrage</font></td>";
+      msg += "<td align='center' colspan='2'><font color='#cc0000'>" + rieki.toFixed(8) + "<br>" + persent.toFixed(6) + "%</font></td>";
+    } else {
+      msg += "<td align='center'><font color='#0000cc'>arbitrage</font></td>";
+      msg += "<td align='center' colspan='2'><font color='#0000cc'>" + rieki.toFixed(8) + "<br>" + persent.toFixed(6) + "%</font></td>";
+    }
+  }
+	msg += "</tr>";
+  msg += "</table>";
+
+  var items = document.getElementsByClassName("main_table");
+  items[0].innerHTML =  msg;
+}
+// サーバAPIにアクセスする-------(*7)
+function api(name, params, callback) {
+	// apiにアクセスするURLを組み立てる
+	var url = API_URL;
+	
+	// サーバと非同期通信する-----(*8)
+	httpGet(url,
+		function(xhr, json) {
+			console.log(json);//-------(*9)
+			var o = JSON.parse(json);
+			callback(o);
+		},
+		function(xhr, status) {
+			console.log("[ERROR]" + status );
+		});
+}
+// Ajax通信
+function httpGet(url, onsuccess, onerror) {
+	
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', url, true);
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4) { //通信完了
+			if (xhr.status == 200) { //HTTPステータス200
+				onsuccess(xhr, xhr.responseText);
+			} else {
+				onerror(xhr, xhr.status);
+			}
+		}
+	};
+	
+	xhr.send(''); // 通信を開始
+	return xhr;
+}
+</script>
+</head>
+
+<body bgcolor="#f0f0ff">
+
+<center>
+
+
+<div class="title">
+<table width="100%"><tr width="100%">
+<td width="20%" align="left">
+<a HREF='index.html'>戻る</a>
+</td>
+<td width="60%" align="center">
+<font size='4'><b>
+BitCoinアービトラージ
+</b></font>
+</td>
+<td width="20%">
+<br>
+</td>
+</tr></table>
+</div>
+
+
+<div class="main_table">
+</div>
+
+
+</center>
+
+</body>
+</html>
